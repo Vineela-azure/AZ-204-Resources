@@ -1,0 +1,65 @@
+-----------------------------------------------------------------
+Demo 2 : Create a static HTML web app by using Azure Cloud Shell
+-----------------------------------------------------------------
+mkdir demoHTML1
+
+cd $HOME/demoHTML1
+
+git clone https://github.com/Azure-Samples/html-docs-hello-world.git
+
+cd html-docs-hello-world
+
+az webapp up --location eastus --name webappcli14062021 --html
+
+http://webappcli12062021.azurewebsites.net
+
+vi index.html
+
+az webapp up --location eastus --name webappcli14062021 --html
+-----------------------------------------------------------------
+Demo 3 : Demo: Create a Web App with a local Git deployment source
+-----------------------------------------------------------------
+
+mkdir kudu1
+
+cd kudu1
+
+git clone https://github.com/Azure-Samples/html-docs-hello-world.git
+
+az group create --location centralus --name Kudu
+
+az appservice plan create --name plan12062021 --resource-group Kudu
+
+az webapp create --name webappkudu12062021 --resource-group Kudu --plan plan12062021 --deployment-local-git
+
+az webapp deployment user set \
+    --user-name vineela12062021 \
+    --password Pass@2021
+
+
+az webapp deployment source config-local-git --name webappkudu12062021 --resource-group Kudu 
+
+cd html-docs-hello-world
+
+git remote add azure https://vineela12062021@webappkudu12062021.scm.azurewebsites.net/webappkudu12062021.git
+
+git push azure master
+
+http://webappkudu12062021.azurewebsites.net
+
+-----------------------------------------------------------------
+Implement Web Apps
+-----------------------------------------------------------------
+https://github.com/Vineela-azure/AZ-204/blob/main/Module-1/Lab-WebApps.md
+
+Logs
+az webapp log tail --name imgweb12062021 --resource-group ManagedPlatform
+
+https://imgweb12062021.scm.azurewebsites.net/api/dump
+
+-----------------------------------------------------------------
+cleanup after module 1 completes or EOD :
+-----------------------------------------------------------------
+az group delete --name <resource_group> --no-wait
+
+
