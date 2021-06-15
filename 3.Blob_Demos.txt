@@ -1,0 +1,317 @@
+Powershell
+------------------------------------------------
+Demo 1: Create a block blob storage account
+------------------------------------------------
+New-AzResourceGroup -Name BLOBCLI -Location EastUS
+
+New-AzStorageAccount -ResourceGroupName BLOBCLI  -Name blockblobcli13062021 `
+-Location EastUS -Kind "BlockBlobStorage" -SkuName "Premium_LRS"
+
+------------------------------------------------
+Demo 2: Add a policy to Azure Blob storage
+------------------------------------------------
+Create Normal Blob Storage and below json can be used for code view of Lifecycle management
+
+{
+"rules": [
+    {
+    "name": "removeafter30days",
+    "enabled": true,
+    "type": "Lifecycle",
+    "definition": {
+        "filters": {
+        "blobTypes": [ "blockBlob" ],
+        "prefixMatch": [ "container1/foo" ]
+        },
+        "actions": {
+        "baseBlob": {
+            "tierToCool": { "daysAfterModificationGreaterThan": 30 },
+            "tierToArchive": { "daysAfterModificationGreaterThan": 90 },
+            "delete": { "daysAfterModificationGreaterThan": 2555 }
+        },
+        "snapshot": {
+            "delete": { "daysAfterCreationGreaterThan": 90 }
+        }
+        }
+    }
+    }
+]
+}
+
+------------------------------------------------
+Demo 3: Using the Azure Blob storage client library v12 for .NET
+------------------------------------------------
+
+# Prompts for a region for the resources to be created
+# and generates a random name for the resources using
+# "az204" as the prefix for easy identification in the portal
+
+$myLocation = Read-Host -Prompt "Enter the region (i.e. westus): "
+$myResourceGroup = "az204-blobdemo-rg"
+$myStorageAcct = "az204blobdemo" + $(get-random -minimum 10000 -maximum 100000)
+
+# Create the resource group
+New-AzResourceGroup -Name $myResourceGroup -Location $myLocation
+
+# Create the storage account
+New-AzStorageAccount -ResourceGroupName $myResourceGroup -Name $myStorageAcct `
+    -Location $myLocation -SkuName "Standard_LRS"
+
+
+Write-Host  "`nNote the following resource group, and storage account names, you will use them in the code examples below.
+    Resource group: $myResourceGroup
+    Storage account: $myStorageAcct"
+
+
+Resource group: az204-blobdemo-rg
+    Storage account: az204blobdemo15583
+
+Connection String:
+DefaultEndpointsProtocol=https;AccountName=az204blobdemo15583;AccountKey=GzzxdA5isbFra3iV/A2ggjigDUI/7fDtgBhDjVnxZv4f1xLNzypBdwAOcNL3QgEwdpEtZTVnNafIVZtzNMw56Q==;EndpointSuffix=core.windows.net
+
+Cloud Shell:
+dotnet new console -n az204-blobdemo1
+
+cd az204-blobdemo1
+
+dotnet build
+
+mkdir data
+
+dotnet add package Azure.Storage.Blobs
+
+vi Program.cs - > Replace with below code. Update "CONNECTION STRING" with the blob storage connection string copied previously
+----
+﻿using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
+using System;
+using System.IO;
+using System.Threading.Tasks;
+
+namespace az204_blobdemo1
+{
+    class Program
+    {
+        public static void Main()
+        {
+            Console.WriteLine("Azure Blob Storage Demo\n");
+
+            // Run the examples asynchronously, wait for the results before proceeding
+            ProcessAsync().GetAwaiter().GetResult();
+
+            Console.WriteLine("Press enter to exit the sample application.");
+            Console.ReadLine();
+
+        }
+
+        private static async Task ProcessAsync()
+        {
+            // Copy the connection string from the portal in the variable below.
+            string storageConnectionString = "DefaultEndpointsProtocol=https;AccountName=az204blobdemo15583;AccountKey=GzzxdA5isbFra3iV/A2ggjigDUI/7fDtgBhDjVnxZv4f1xLNzypBdwAOcNL3QgEwdpEtZTVnNafIVZtzNMw56Q==;EndpointSuffix=core.windows.net";
+
+            // Create a client that can authenticate with a connection string
+            BlobServiceClient blobServiceClient = new BlobServiceClient(storageConnectionString);
+
+            // EXAMPLE CODE STARTS BELOW HERE
+        //Create a unique name for the container
+                string containerName = "demoblob" + Guid.NewGuid().ToString();
+
+        // Create the container and return a container client object
+                BlobContainerClient containerClient = await blobServiceClient.CreateBlobContainerAsync(containerName);
+                Console.WriteLine("A container named '" + containerName + "' has been created. " +
+                    "\nTake a minute and verify in the portal." +
+                    "\nNext a file will be created and uploaded to the container.");
+                Console.WriteLine("Press 'Enter' to continue.");
+                Console.ReadLine();
+
+        // Create a local file in the ./data/ directory for uploading and downloading
+        string localPath = "./data/";
+        string fileName = "demofile" + Guid.NewGuid().ToString() + ".txt";
+        string localFilePath = Path.Combine(localPath, fileName);
+
+        // Write text to the file
+        await File.WriteAllTextAsync(localFilePath, "Hello, World!");
+
+        // Get a reference to the blob
+        BlobClient blobClient = containerClient.GetBlobClient(fileName);
+
+        Console.WriteLine("Uploading to Blob storage as blob:\n\t {0}\n", blobClient.Uri);
+
+        // Open the file and upload its data
+        using FileStream uploadFileStream = File.OpenRead(localFilePath);
+        await blobClient.UploadAsync(uploadFileStream, true);
+        uploadFileStream.Close();
+
+        Console.WriteLine("\nThe file was uploaded. We'll verify by listing" +
+                " the blobs next.");
+        Console.WriteLine("Press 'Enter' to continue.");
+        Console.ReadLine();
+
+        // List blobs in the container
+        Console.WriteLine("Listing blobs...");
+        await foreach (BlobItem blobItem in containerClient.GetBlobsAsync())
+        {
+            Console.WriteLine("\t" + blobItem.Name);
+        }
+
+        Console.WriteLine("\nYou can also verify by looking inside the " +
+                "container in the portal." +
+                "\nNext the blob will be downloaded with an altered file name.");
+        Console.WriteLine("Press 'Enter' to continue.");
+        Console.ReadLine();
+
+// Download the blob to a local file
+// Append the string "DOWNLOADED" before the .txt extension
+        string downloadFilePath = localFilePath.Replace(".txt", "DOWNLOADED.txt");
+
+        Console.WriteLine("\nDownloading blob to\n\t{0}\n", downloadFilePath);
+
+// Download the blob's contents and save it to a file
+        BlobDownloadInfo download = await blobClient.DownloadAsync();
+
+        using (FileStream downloadFileStream = File.OpenWrite(downloadFilePath))
+        {
+            await download.Content.CopyToAsync(downloadFileStream);
+            downloadFileStream.Close();
+        }
+        Console.WriteLine("\nLocate the local file to verify it was downloaded.");
+        Console.WriteLine("The next step is to delete the container and local files.");
+        Console.WriteLine("Press 'Enter' to continue.");
+        Console.ReadLine();
+
+        // Delete the container and clean up local files created
+        Console.WriteLine("\n\nDeleting blob container...");
+        await containerClient.DeleteAsync();
+
+        Console.WriteLine("Deleting the local source and downloaded files...");
+        File.Delete(localFilePath);
+        File.Delete(downloadFilePath);
+
+        Console.WriteLine("Finished cleaning up.");
+
+
+        }
+    }
+}
+---------------------
+
+dotnet build
+
+dotnet run
+
+
+
+
+------------------------------------------------
+Lab 3 : Retrieving Azure Storage resources and metadata by using the Azure Storage SDK for .NET
+------------------------------------------------
+blobServiceEndpoint: https://mediastor13062021.blob.core.windows.net/
+
+storageAccountName: mediastor13062021
+
+Key : /FggPRq7w6L5Qh8p7rt5jfw7QnE8vddpWNJMwT1oZCDkRL2BuBqegALE02f+sR2FgP6Jjzbkxv6/WIKJNXdTdQ==
+
+raster-graphics
+
+compressed-audio
+
+cloud shell:
+
+cd AZ-204-DevelopingSolutionsforMicrosoftAzure/Allfiles/Labs/03/Starter/BlobManager
+
+dotnet new console --name BlobManager --output .
+
+dotnet add package Azure.Storage.Blobs --version 12.0.0
+
+dotnet build
+
+ls -ltr
+
+vi Program.cs
+
+delete everything and paste below:
+---
+using Azure.Storage;
+using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
+using System;
+using System.Threading.Tasks;
+
+
+public class Program
+{
+    private const string blobServiceEndpoint = "https://mediastor13062021.blob.core.windows.net/";
+    private const string storageAccountName = "mediastor13062021";
+    private const string storageAccountKey = "/FggPRq7w6L5Qh8p7rt5jfw7QnE8vddpWNJMwT1oZCDkRL2BuBqegALE02f+sR2FgP6Jjzbkxv6/WIKJNXdTdQ==";
+
+    public static async Task Main(string[] args)
+    {
+	StorageSharedKeyCredential accountCredentials = new StorageSharedKeyCredential(storageAccountName, storageAccountKey);
+
+	BlobServiceClient serviceClient = new BlobServiceClient(new Uri(blobServiceEndpoint), accountCredentials);
+
+	AccountInfo info = await serviceClient.GetAccountInfoAsync();
+
+	await Console.Out.WriteLineAsync($"Connected to Azure Storage Account");
+	await Console.Out.WriteLineAsync($"Account name:\t{storageAccountName}");
+	await Console.Out.WriteLineAsync($"Account kind:\t{info?.AccountKind}");
+	await Console.Out.WriteLineAsync($"Account sku:\t{info?.SkuName}");
+	await EnumerateContainersAsync(serviceClient);
+	string existingContainerName = "raster-graphics";
+	await EnumerateBlobsAsync(serviceClient, existingContainerName);
+	string newContainerName = "vector-graphics";
+	BlobContainerClient containerClient = await GetContainerAsync(serviceClient, newContainerName);
+	string uploadedBlobName = "graph.svg";
+	BlobClient blobClient = await GetBlobAsync(containerClient, uploadedBlobName);
+	await Console.Out.WriteLineAsync($"Blob Url:\t{blobClient.Uri}");
+
+
+    }
+    private static async Task EnumerateContainersAsync(BlobServiceClient client)
+    {       
+	await foreach (BlobContainerItem container in client.GetBlobContainersAsync())
+        {
+   		 await Console.Out.WriteLineAsync($"Container:\t{container.Name}");
+	}
+ 
+    }
+
+    private static async Task EnumerateBlobsAsync(BlobServiceClient client, string containerName)
+   {      
+	BlobContainerClient container = client.GetBlobContainerClient(containerName);
+	await Console.Out.WriteLineAsync($"Searching:\t{container.Name}");
+	await foreach (BlobItem blob in container.GetBlobsAsync())
+	{
+	    await Console.Out.WriteLineAsync($"Existing Blob:\t{blob.Name}");
+	}
+   }
+
+   private static async Task<BlobContainerClient> GetContainerAsync(BlobServiceClient client, string containerName)
+  {      
+  	BlobContainerClient container = client.GetBlobContainerClient(containerName);
+	await container.CreateIfNotExistsAsync(PublicAccessType.Blob);
+	await Console.Out.WriteLineAsync($"New Container:\t{container.Name}");
+	return container;
+  }
+
+   private static async Task<BlobClient> GetBlobAsync(BlobContainerClient client, string blobName)
+   {  
+	BlobClient blob = client.GetBlobClient(blobName);
+	await Console.Out.WriteLineAsync($"Blob Found:\t{blob.Name}");
+	return blob;
+   }
+
+
+}
+
+---save
+
+dotnet run
+
+Upload C:\Users\swath\OneDrive\Desktop\Azure\Az-204\AZ-204-DevelopingSolutionsforMicrosoftAzure-master\Allfiles\Labs\03\Starter\Images\graph.svg to "vector-graphics" container and rerun
+
+dotnet run
+
+
+
+

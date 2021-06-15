@@ -1,0 +1,73 @@
+-----------------------------------------------------
+Demo 1 : Create Azure Cosmos DB resources by using the Azure Portal
+-----------------------------------------------------
+
+az204-cosmos-rg
+
+cosmosdb15062021
+
+Database : ToDoList
+
+Container : Items
+
+Partition Key :  /category
+
+Item1 : 
+
+{
+    "id": "1",
+    "category": "personal",
+    "name": "groceries",
+    "description": "Pick up apples and strawberries.",
+    "isComplete": false
+}
+
+Item2 :
+
+{
+    "id": "2",
+    "category": "official",
+    "name": "email",
+    "description": "send daily status to manager",
+    "isComplete": false
+}
+ 
+SELECT * FROM c where c.id="1"
+
+---------------------------------------------------
+Demo 2 : Working with Azure Cosmos DB by using .NET
+---------------------------------------------------
+Powershell
+
+mkdir cosmosdemo
+
+git clone https://github.com/Vineela-azure/AZ-204-Resources.git
+
+cd AZ-204-Resources
+
+unzip ./AzureCosmosDB.zip
+
+cd AzureCosmosDB/AzureCosmosDB
+
+code . 
+
+Update Program.cs to have connection string of cosmos db you wanted to access. Save
+
+dotnet build
+
+dotnet run
+
+unzip ./CosmosDB.zip
+
+cd CosmosDB/CosmosDB
+
+Edit Program.cs to have PArtition key as coursename which looks like 
+
+ _container.CreateItemAsync<Course>(_course, new PartitionKey(_course.coursename)).GetAwaiter().GetResult();
+
+Save.
+
+dotnet build
+
+dotnet run
+
