@@ -1,0 +1,138 @@
+----------------------------------------------------
+Demo 1: Register an app with the Microsoft Identity
+----------------------------------------------------
+
+az204appregdemo
+
+http://localhost
+
+Create secret and get key value
+
+dX4743~-Nb5NMcG4b.5a4e.T~oXVuKr.T8
+
+----------------------------------------------------
+Demo 2:Interactive authentication by using MSAL.NET
+----------------------------------------------------
+md az204-authdemo1
+cd az204-authdemo1
+
+dotnet new console
+
+code .
+
+dotnet add package Microsoft.Identity.Client
+
+Replace Program.cs file with below
+---------
+using System;
+using System.Threading.Tasks;
+using Microsoft.Identity.Client;
+
+namespace az204_authdemo1
+{
+    class Program
+    {
+       // private static const string _clientId = "APPLICATION_CLIENT_ID";
+       // private static const string _tenantId = "DIRECTORY_TENANT_ID";
+        public static async Task Main(string[] args)
+        {
+            var app = PublicClientApplicationBuilder.Create("94f90279-e832-4b0d-a9e1-9445832c0b93").WithAuthority(AzureCloudInstance.AzurePublic,"9a15684c-2c65-4008-adb4-8bf87aa03c17").WithRedirectUri("http://localhost").Build();
+           // var app = PublicClientApplicationBuilder.Create(_clientId).WithAuthority(AzureCloudInstance.AzurePublic, _tenantId).WithRedirectUri("http://localhost").Build();
+           string[] scopes = { "user.read" };
+            AuthenticationResult result = await app.AcquireTokenInteractive(scopes).ExecuteAsync();
+            Console.WriteLine($"Token:\t{result.AccessToken}");
+           //Console.WriteLine("Hello World!");
+        }
+    }
+}
+
+
+--------
+
+dotnet build
+dotnet run
+
+Accept
+
+Token
+
+----------------------------------------------------
+Demo3: Retrieving profile information by using the Microsoft  Graph SDK
+----------------------------------------------------
+
+dotnet add package Microsoft.Graph
+dotnet add package Microsoft.Graph.Auth --version 1.0.0-preview.2
+
+using Microsoft.Graph;
+using Microsoft.Graph.Auth;
+
+Delete below code in Program.cs
+AuthenticationResult result = await app.AcquireTokenInteractive(scopes).ExecuteAsync();
+Console.WriteLine($"Token:\t{result.AccessToken}");
+
+Add below code:
+var provider = new InteractiveAuthenticationProvider(app, scopes);
+
+var client = new GraphServiceClient(provider);
+
+User me = await client.Me.Request().GetAsync();
+Console.WriteLine($"Display Name:\t{me.DisplayName}");
+
+dotnet build
+
+dotnet run
+
+
+
+
+------------------ Demo : AAD Create----------------
+1. Search for AAD -> Market Place AAD-> Create
+2. Fill below
+Organization : "Azure AD Test Account"
+domain : "aaddomain17062021"
+Country : US
+
+Create.
+
+3. Azure default Active Directory -> Switch Directory to goto new AAD Test account
+4. This a fresh tenant.
+5. Add Subscription
+
+
+------------------ Demo : Service Principal----------------
+1. AAD-> App Registration -> New Application Registration
+2. Note Applciation client ID and Directory Tenant ID
+3. click on registered add -> Certificates & Secret -> Create new secret
+4. Copy the secret value before moving to next screen
+MXBZ1~Uv_BF1522bw~JcbP~YZaL0s55NNJ
+MXBZ1~Uv_BF1522bw~JcbP~YZaL0s55NNJ
+
+
+5. StorageAccount -> IAM -> Role assignment -> Add SP created.
+6. Create containers input and output. Upload sample file to copy in input and this will be moved to output using ADF
+7. ADF -> Linked service authenticate using SP -> Give Application (client) ID in Service principle id and client secret in key.
+8. Test connection
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

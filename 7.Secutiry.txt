@@ -1,0 +1,41 @@
+-------------------------------------------------------------------------
+Demo 1: Set and retrieve a secret from Azure Key Vault by using Azure CLI
+-------------------------------------------------------------------------
+************Powershell**********
+
+$myResourceGroup="az204vaultrg"
+$myKeyVault="az204vault" + $(get-random -minimum 10000 -maximum 100000)
+$myLocation="eastus"
+
+az group create --name $myResourceGroup --location $myLocation
+
+az keyvault create --name $myKeyVault --resource-group $myResourceGroup --location $myLocation
+
+az keyvault secret set --vault-name $myKeyVault --name ExamplePassword --value hVFkk965BuUv
+
+az keyvault secret show --name ExamplePassword --vault-name $myKeyVault
+
+az group delete --name $myResourceGroup --no-wait --yes
+
+-------------------------------------------------------------------------
+Demo 2 :Configuring managed identities on an Azure VM by using Azure CLI
+-------------------------------------------------------------------------
+*********Bash shell*************
+
+az group create --name RGMID --location eastus
+
+az vm create \
+    --resource-group RGMID \
+    --name myVM \
+    --image win2016datacenter \
+    --assign-identity \
+    --admin-username azureuser \
+    --admin-password myPassword12
+
+az vm identity assign -g RGMID -n myVM
+
+az identity create -g RGMID -n myUserAssignedIdentity
+
+az group delete --name RGMID --no-wait --yes
+-------------------------------------------------------------------------
+

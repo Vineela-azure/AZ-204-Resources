@@ -1,0 +1,138 @@
+localhost\vineela
+localhost\username
+
+------------------------------------------------------
+Demo2 : Creating an Azure VM by using PowerShell
+------------------------------------------------------
+
+# create a resource group
+New-AzResourceGroup -Name VMRG -Location EastUS
+
+# Create the virtual machine.
+
+New-AzVm MyVmSimple
+
+New-AzVM -Name MyVm16062021 -Credential (Get-Credential)
+
+New-AzVm -Credential (Get-Credential)`
+    -ResourceGroupName VMRG `
+    -Name myVMDemo `
+    -Location WestUS `
+    -OpenPorts 3389,80
+
+------------------------------------------------------
+ARM Demo:
+------------------------------------------------------
+1. Storage -> Create -> Fill details -> Download template for automation
+2. Update Parameters.json Schema value parameter 2015-01-01 to 2019-01-01
+3. Search for Template -> Right side in MArket place select Template deployment (deploy using custom templates)
+4. Select  Build your own template in the editor and upload template.json and parameters.json
+5. Save, Review and create.
+
+------------------------------------------------------
+Demo: Deploy VM using ARM templates from CLI
+------------------------------------------------------
+https://github.com/Azure/azure-quickstart-templates/blob/master/101-vm-simple-linux/azuredeploy.json
+-> Save this file to local machine.
+
+Upload to Cloud Shell and Run below commands
+
+$resourceGroupName = Read-Host -Prompt "Enter the Resource Group name"
+$location = Read-Host -Prompt "Enter the location (i.e. centralus)"
+
+New-AzResourceGroup -Name $resourceGroupName -Location "$location"
+New-AzResourceGroupDeployment -ResourceGroupName $resourceGroupName -TemplateFile "$HOME/azuredeploy.json"
+
+Try connecting to the VM from Cloud shell:
+
+ssh vineela@simplelinuxvm-uyxvxbwhnla2i.westus.cloudapp.azure.com
+
+------------------------------------------------------
+----------------------------------------------------
+Docker
+----------------------------------------------------
+----------------------------------------------------
+https://www.katacoda.com/courses/docker/create-nginx-static-web-server
+----------------------------------------------------
+Demo 1: Retrieve and deploy existing Docker image locally
+----------------------------------------------------
+docker pull mcr.microsoft.com/dotnet/core/samples:aspnetapp
+docker image list
+docker run -d -p 8080:80 mcr.microsoft.com/dotnet/core/samples:aspnetapp
+
+--Click on docker:80 and update port to 8080 and refresh
+
+docker ps
+docker container stop <NAME>
+docker ps -a
+docker container rm <NAME>
+docker ps -a
+docker image list
+docker image rm mcr.microsoft.com/dotnet/core/samples:aspnetapp
+docker image list
+----------------------------------------------------
+Demo 2 :Create a container image by using Docker
+----------------------------------------------------
+https://www.katacoda.com/courses/docker/create-nginx-static-web-server
+
+Run through the scenario to deploy html web page.
+
+
+
+
+
+
+
+
+
+
+
+
+
+git clone https://github.com/MicrosoftDocs/mslearn-hotel-reservation-system.git
+cd mslearn-hotel-reservation-system/src
+pwd
+echo "" > Dockerfile
+notepad Dockerfile
+
+Add below to dockerfile
+---
+#1
+FROM mcr.microsoft.com/dotnet/core/sdk:2.2
+WORKDIR /src
+COPY ["HotelReservationSystem/HotelReservationSystem.csproj", "HotelReservationSystem/"]
+COPY ["HotelReservationSystemTypes/HotelReservationSystemTypes.csproj", "HotelReservationSystemTypes/"]
+RUN dotnet restore "HotelReservationSystem/HotelReservationSystem.csproj"
+
+#2
+COPY . .
+WORKDIR "/src/HotelReservationSystem"
+RUN dotnet build "HotelReservationSystem.csproj" -c Release -o /app
+
+#3
+RUN dotnet publish "HotelReservationSystem.csproj" -c Release -o /app
+
+#4
+EXPOSE 80
+WORKDIR /app
+ENTRYPOINT ["dotnet", "HotelReservationSystem.dll"]
+-------
+
+
+docker build -t reservationsystem .
+docker image list
+docker run -p 80:80 -d --name reservations reservationsystem
+docker ps -a
+docker container stop reservations
+docker rm reservations
+docker image rm <image_name>
+
+
+docker login -–username 00000000-0000-0000-0000-000000000000 -–password eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjQ1NlA6WjNCRjpCQ0tPOkpUN0w6MlNLSTpVQUpZOkRCSU46VU5KWTpHWUZHOjdMQTI6WUpNSzpWUkVaIn0.eyJqdGkiOiJhOGM0YzlkMi02ZWM1LTRkZDQtYmNjMy1iYzRmYjZhOGY5ODIiLCJzdWIiOiJsaXZlLmNvbSNhenVyZXRyYWluZXIwMDZAZ21haWwuY29tIiwibmJmIjoxNjIzODY0MDE0LCJleHAiOjE2MjM4NzU3MTQsImlhdCI6MTYyMzg2NDAxNCwiaXNzIjoiQXp1cmUgQ29udGFpbmVyIFJlZ2lzdHJ5IiwiYXVkIjoiYWNyMTYwNjIwMjEuYXp1cmVjci5pbyIsInZlcnNpb24iOiIxLjAiLCJyaWQiOiIwMDkxZWIxMTI2MTE0MjY0OTJjNzY1NGRhNWM4MjdhNiIsImdyYW50X3R5cGUiOiJyZWZyZXNoX3Rva2VuIiwiYXBwaWQiOiJjNDRiNDA4My0zYmIwLTQ5YzEtYjQ3ZC05NzRlNTNjYmRmM2MiLCJ0ZW5hbnQiOiI5YTE1Njg0Yy0yYzY1LTQwMDgtYWRiNC04YmY4N2FhMDNjMTciLCJwZXJtaXNzaW9ucyI6eyJhY3Rpb25zIjpbInJlYWQiLCJ3cml0ZSIsImRlbGV0ZSJdLCJub3RBY3Rpb25zIjpudWxsfSwicm9sZXMiOltdfQ.2ioklFbHZziogX2DYzDGzlSYuKj6rxGE8CWAue1Ovy7MMBCq3kOfqOHbmArh003sd7-2g2nlNJTsvMwOF7gAs3RQH03EGGgrEjEY3NjwPNxk3ZSfzlfFuE4kJuttQgHeF-85YS3LrSndPAjPu6-v4SOhraB96Z2VHSgU1fKAHVdwKZRqbHj_eUW0KrpvwqWjKBhYwbPIK4K7_vnAavACeUvgGJ-B66egOoeVQ60-VMqyYPHbEFIGjSsp-0U_8YxjoBeq-6ckqZGnbU43HD-bPpECsi_OxlTSIY8A-hxzEZJ2bGf0Je_kmLceyqpy0crT9gPTd5JT0hnL2jjNjiVb8w acr16062021.azurecr.io
+
+
+
+
+
+
+

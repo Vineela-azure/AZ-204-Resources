@@ -1,0 +1,119 @@
+------------------------------------------------------------------------
+Demo: Route custom events to web endpoint by using the Azure CLI commands and Event Grid
+------------------------------------------------------------------------
+**************bash**************
+
+myLocation=westus
+az group create -n az204-egdemo-rg -l $myLocation
+
+az provider register --namespace Microsoft.EventGrid
+
+az provider show --namespace Microsoft.EventGrid --query "registrationState"
+
+let rNum=$RANDOM*$RANDOM
+myTopicName="az204-egtopic-${rNum}"
+az eventgrid topic create --name $myTopicName -l $myLocation -g az204-egdemo-rg
+
+
+
+mySiteName="az204-egsite-${rNum}"
+mySiteURL="https://${mySiteName}.azurewebsites.net"
+az deployment group create \
+    -g az204-egdemo-rg \
+    --template-uri "https://raw.githubusercontent.com/Azure-Samples/azure-event-grid-viewer/master/azuredeploy.json" \
+    --parameters siteName=$mySiteName hostingPlanName=viewerhost
+echo "Your web app URL: ${mySiteURL}"
+
+
+
+endpoint="${mySiteURL}/api/updates"
+subId=$(az account show --subscription "" | jq -r '.id')
+
+az eventgrid event-subscription create \
+--source-resource-id "/subscriptions/$subId/resourceGroups/az204-egdemo-rg/providers/Microsoft.EventGrid/topics/$myTopicName" \
+--name demoViewerSub \
+--endpoint $endpoint
+
+
+
+endpoint=$(az eventgrid topic show --name $myTopicName -g az204-egdemo-rg --query "endpoint" --output tsv)
+key=$(az eventgrid topic key list --name $myTopicName -g az204-egdemo-rg --query "key1" --output tsv)
+
+
+event='[ {"id": "'"$RANDOM"'", "eventType": "recordInserted", "subject": "myapp/vehicles/motorcycles", "eventTime": "'`date +%Y-%m-%dT%H:%M:%S%z`'", "data":{ "make": "Contoso", "model": "Northwind"},"dataVersion": "1.0"} ]'
+
+
+curl -X POST -H "aeg-sas-key: $key" -d "$event" $endpoint
+
+---------------------------------------------
+Demo : Event Hub
+---------------------------------------------
+
+0.Create a Storage and add container and files
+1. Create Event Hub (nodes -4)
+2. Event Hub -> Shared Access Policies -> Add -> Give name and select "Send". Get Connection string–primary key and save "Endpoint=sb://eventnamespace17062021.servicebus.windows.net/;SharedAccessKeyName=sendpolicy;SharedAccessKey=R80qQSXIIP7bM0Opqlu/9ViJB/r2EmeM5R5ZaQ6ekOc="
+3. Event Hub -> Event Hubs -> Add -> Capture On -> off
+4. Event Hub -> Event Hubs -> Select event hub created in prev step. -> Shared Access Policies -> Add -> Give name and select "Send". Get Connection string–primary key and save 
+
+Endpoint=sb://eventhubnamespace17062021.servicebus.windows.net/;SharedAccessKeyName=sendpolicy;SharedAccessKey=xxh7vsIXvm5rPDPFr7zIxnARzpc05IKD+5eHXJhNz6k=;EntityPath=myeventhubdemo
+
+
+5. Cloud shell:
+
+mkdir eventhubdemo
+cd eventhubdemo
+dotnet new console
+dotnet add package Azure.Messaging.EventHubs
+dotnet add package Azure.Messaging.EventHubs.Processor
+
+7. Copy files from below link and replace (or)
+https://github.com/MarczakIO/azure4everyone-samples/tree/master/azure-eventhubs-introduction/01-SendEvents
+
+Replace Program.cs file with entire content.
+-----------
+
+
+using System;
+using System.Text;
+using System.Threading.Tasks;
+using Azure.Messaging.EventHubs;
+using Azure.Messaging.EventHubs.Producer;
+
+namespace eventhubdemo
+{
+    class Program
+    {
+        private const string connectionString = "Endpoint=sb://eventnamespace17062021.servicebus.windows.net/;SharedAccessKeyName=sendpolicyhub;SharedAccessKey=0+Y+QQ5o8tipepm4tmKYyU2H08QbtfC/CJLqMKxORNg=;EntityPath=myeventhub";
+        private const string eventHubName = "myeventhub";
+        static async Task Main()
+        {
+            // Create a producer client that you can use to send events to an event hub
+            await using (var producerClient = new EventHubProducerClient(connectionString, eventHubName))
+            {
+                // Create a batch of events 
+                using EventDataBatch eventBatch = await producerClient.CreateBatchAsync();
+
+                // Add events to the batch. An event is a represented by a collection of bytes and metadata. 
+                eventBatch.TryAdd(new EventData(Encoding.UTF8.GetBytes("First event")));
+                eventBatch.TryAdd(new EventData(Encoding.UTF8.GetBytes("Second event")));
+                eventBatch.TryAdd(new EventData(Encoding.UTF8.GetBytes("Third event")));
+
+                // Use the producer client to send the batch of events to the event hub
+                await producerClient.SendAsync(eventBatch);
+                Console.WriteLine("A batch of 3 events has been published.");
+            }
+        }
+    }
+}
+
+-----------
+Add packages in .csproj
+
+<PackageReference Include="Azure.Messaging.EventHubs" Version="5.4.1" />
+<PackageReference Include="Azure.Messaging.EventHubs.Processor" Version="5.4.1" />
+
+----
+dotnet build
+dotnet run
+
+Check messages chart on event hub's overview page.

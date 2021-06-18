@@ -1,0 +1,15 @@
+--------------------------------------------------------------
+Demo: Azure monitoring on Azure Portal
+--------------------------------------------------------------
+AzureMetrics 
+| summarize arg_max(TimeGenerated, UnitName, Total, Count, Maximum, Minimum, Average) by MetricName
+
+
+
+
+cnugu5efm4jwvnitcku07hd7rd1gjh6s0ielavju
+
+
+
+InsightsMetrics 
+| where TimeGenerated >= ago(10m)

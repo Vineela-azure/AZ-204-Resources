@@ -1,0 +1,37 @@
+---------------------------------------------------
+Demo: Create an APIM instance by using Azure CLI
+---------------------------------------------------
+*******Power Shell********
+
+$myLocation = Read-Host -Prompt "Enter the region (i.e. westus): "
+az group create -n az204-apim-rg -l $myLocation
+
+$myEmail = Read-Host -Prompt "Enter an email address: "
+$myAPIMname="az204-apim-" + $(get-random -minimum 10000 -maximum 100000)
+az apim create -n $myAPIMname -l $myLocation `
+    --publisher-email $myEmail  `
+    -g az204-apim-rg `
+    --publisher-name AZ204-APIM-Demo `
+    --sku-name Consumption
+
+---------------------------------------------------
+Demo: Import an API by using the Azure Portal
+---------------------------------------------------
+https://conferenceapi.azurewebsites.net?format=json
+Demo Conference API
+conference
+---------------------------------------------------
+Demo: Create and publish a product
+---------------------------------------------------
+AZ204 API Demo
+az204-api-demo
+AZ204 Class Demo
+
+---------------------------------------------------
+Demo: Transform your API by using policies
+---------------------------------------------------
+<outbound>
+    <set-header name="X-Powered-By" exists-action="delete" />
+    <set-header name="X-AspNet-Version" exists-action="delete" />
+    <base />
+</outbound>
