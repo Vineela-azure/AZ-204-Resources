@@ -13,3 +13,5 @@ Microdoft Labs for AZ-204 : https://github.com/MicrosoftLearning/AZ-204-Developi
 
 Lab help video:		https://www.youtube.com/c/okayazure/playlists
 
+Online Docker Practice: https://www.katacoda.com/courses/docker/create-nginx-static-web-server
+
