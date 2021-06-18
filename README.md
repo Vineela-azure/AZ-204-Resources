@@ -1,7 +1,7 @@
 # AZ-204-Resources
 Training Material
 
-Presentation ppt:	https://github.com/Vineela-azure/AZ-204-Resources
+Presentation pdf:	https://github.com/Vineela-azure/AZ-204-Resources
 
 Practice Test Link:	https://www.examtopics.com/exams/microsoft/az-204/view
 
